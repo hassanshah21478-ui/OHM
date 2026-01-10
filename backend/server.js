@@ -363,7 +363,7 @@ app.listen(PORT, HOST, () => {
   console.log(`   📊 Check Status: ${process.env.SERVER_URL ? `https://${process.env.SERVER_URL}` : `http://${serverIP}:${PORT}`}/api/espnow/status`);
   console.log('');
   console.log('🖥️ FRONTEND:');
-  console.log(`   👉 Frontend URL: ${process.env.FRONTEND_URL || "Not deployed yet"}`);
+  console.log(`   👉 Frontend URL: https://ohm-xi.vercel.app`);
   console.log('='.repeat(60));
   console.log(`⏰ Server Time: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
