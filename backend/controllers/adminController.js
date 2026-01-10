@@ -17,7 +17,7 @@ exports.getAdmin = async (req, res) => {
       admin: {
         ...admin.toObject(),
         profilePic: admin.profilePic
-          ? `${process.env.SERVER_URL || "http://localhost:5000"}${admin.profilePic}`
+          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${admin.profilePic}`
           : "", 
       },
     });
@@ -102,7 +102,7 @@ exports.updateAdmin = async (req, res) => {
       admin: {
         ...updatedAdmin.toObject(),
         profilePic: updatedAdmin.profilePic
-          ? `${process.env.SERVER_URL || "http://localhost:5000"}${updatedAdmin.profilePic}`
+          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${updatedAdmin.profilePic}`
           : "",
       },
     });

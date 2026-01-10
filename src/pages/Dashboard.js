@@ -24,7 +24,6 @@ const Dashboard = () => {
     message: "All systems normal",
   });
 
-  // Keep previous units across updates
   const prevUnits = useRef({
     "A-001": 0,
     "A-003": 0,
@@ -35,7 +34,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchMeters = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/meters");
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/meters`);
         const data = await res.json();
         const { meters: apiMeters, analysis } = data;
 

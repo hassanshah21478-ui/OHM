@@ -11,7 +11,7 @@ import {
   Lightbulb,
   Power,
   Cog,
-  BarChart3, // Added for graph button
+  BarChart3, 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../styles/AlertCard.css";
@@ -21,8 +21,8 @@ const AlertCard = () => {
 
   const [data, setData] = useState(null);
   const [powerLoss, setPowerLoss] = useState(0);
-  const [showGraph, setShowGraph] = useState(false); // New state for graph modal
-  const [graphData, setGraphData] = useState(null); // New state for graph data
+  const [showGraph, setShowGraph] = useState(false);
+  const [graphData, setGraphData] = useState(null); 
 
   const [theftAlert, setTheftAlert] = useState({
     icon: null,
@@ -51,7 +51,7 @@ const AlertCard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/system/status");
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/system/status`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         if (json && typeof json === "object") setData(json);
@@ -138,7 +138,7 @@ const AlertCard = () => {
   const sendEmail = async (type) => {
     try {
       setSending(true);
-      const res = await fetch("http://localhost:5000/api/email/send", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/email/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

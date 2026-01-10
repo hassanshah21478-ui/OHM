@@ -17,8 +17,8 @@ import Footer from "../components/Footer";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import "../styles/LogsPage.css";
 
-// Base URL for API (can be moved to config)
-const API_BASE_URL = "http://localhost:5000";
+
+const API_BASE_URL = `${process.env.REACT_APP_API_URL}`;
 
 const LogsPage = () => {
   const navigate = useNavigate();
@@ -34,7 +34,6 @@ const LogsPage = () => {
     monthly: { total: 0, theft: 0, fault: 0, avgLoss: 0 }
   });
 
-  // Enhanced fetch with error handling
   const fetchDailyLogs = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/logs/daily/all`);
@@ -97,7 +96,6 @@ const LogsPage = () => {
     }
   }, []);
 
-  // Enhanced data loading with refresh capability
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -122,12 +120,11 @@ const LogsPage = () => {
     }
   }, [fetchDailyLogs, fetchMonthlyLogs, fetchStats]);
 
-  // Initial data fetch
   useEffect(() => {
     loadData();
-  }, [loadData]); // ✅ FIXED: Added loadData to dependencies
+  }, [loadData]); 
 
-  // Helper for theft alert display
+
   const renderTheftAlert = (alert) => {
     switch (alert) {
       case "Theft Detected":
@@ -157,7 +154,7 @@ const LogsPage = () => {
     }
   };
 
-  // Delete functions with enhanced feedback
+
   const handleDeleteDaily = useCallback(async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/logs/daily/${id}`, { 
@@ -226,7 +223,6 @@ const LogsPage = () => {
     }
   }, [fetchMonthlyLogs, fetchStats]);
 
-  // Enhanced CSV export with more data
   const exportToCSV = useCallback((logs, type) => {
     if (logs.length === 0) {
       alert(`No ${type} logs to export`);
@@ -280,7 +276,6 @@ const LogsPage = () => {
   const currentLogs = activeTab === "daily" ? dailyLogs : monthlyLogs;
   const currentStats = activeTab === "daily" ? stats.daily : stats.monthly;
 
-  // Calculate derived stats for display
   const getPowerLossColor = useCallback((loss) => {
     if (loss > 0) return "#ff5252";
     if (loss < 0) return "#ff9800";

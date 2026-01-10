@@ -28,7 +28,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -356,16 +356,16 @@ app.listen(PORT, HOST, () => {
   console.log('='.repeat(60));
   console.log('🚀 SERVER STARTED SUCCESSFULLY');
   console.log('='.repeat(60));
-  console.log(`📦 Local Access: http://localhost:${PORT}`);
-  console.log(`🌐 Network Access: http://${serverIP}:${PORT}`);
+  console.log(`📦 Backend URL: https://${process.env.SERVER_URL || "ohm-4su2.onrender.com"}`);
   console.log('');
   console.log('📡 ESP32 CONFIGURATION:');
-  console.log(`   📤 Send Data To: http://${serverIP}:${PORT}/api/espnow/data`);
-  console.log(`   📊 Check Status: http://${serverIP}:${PORT}/api/espnow/status`);
+  console.log(`   📤 Send Data To: ${process.env.SERVER_URL || "https://ohm-4su2.onrender.com"}/api/espnow/data`);
+  console.log(`   📊 Check Status: ${process.env.SERVER_URL || "https://ohm-4su2.onrender.com"}/api/espnow/status`);
   console.log('');
   console.log('🖥️ FRONTEND:');
-  console.log(`   👉 Open: http://localhost:3000`);
+  console.log(`   👉 Frontend URL: ${process.env.FRONTEND_URL || "Not deployed yet"}`);
   console.log('='.repeat(60));
   console.log(`⏰ Server Time: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
 });
+

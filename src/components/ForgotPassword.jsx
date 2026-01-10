@@ -39,7 +39,7 @@ const ForgotPassword = () => {
     if (!email.trim()) return setError("Please enter your registered email.");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/forgot-password", { email });
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/forgot-password`, { email });
       if (res.data.success) {
         setStep(2);
         setCountdown(59);
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
     if (!code.trim()) return setError("Please enter the verification code.");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/verify-code", { email, code });
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/verify-code`, { email, code });
       if (res.data.success) {
         setStep(3);
         setSuccess("Code verified. You may now reset your password.");
@@ -86,7 +86,7 @@ const ForgotPassword = () => {
       return setError("Password must be at least 8 characters long.");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/reset-password", {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/reset-password`, {
         email,
         password: newPassword,
       });

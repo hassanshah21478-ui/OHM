@@ -21,7 +21,6 @@ export const AdminProvider = ({ children }) => {
       const data = await res.json();
 
       if (data.success && data.admin) {
-        // ✅ Backend already gives full URL for profilePic
         setAdmin(data.admin);
       } else {
         setAdmin(null);
@@ -36,7 +35,6 @@ export const AdminProvider = ({ children }) => {
 
   useEffect(() => {
     fetchAdmin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

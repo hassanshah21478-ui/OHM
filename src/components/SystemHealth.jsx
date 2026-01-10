@@ -18,7 +18,7 @@ const SystemHealth = () => {
 
   const fetchHealthData = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/system/health");
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/system/health`);
       const data = await res.json();
       
   
