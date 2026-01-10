@@ -1,0 +1,187 @@
+.password-input-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.password-input {
+  width: 100%;
+  padding: 14px 48px 14px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1.4;
+  background: #ffffff;
+  color: #2d3748;
+  outline: none;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+.password-input:focus {
+  border-color: #667eea;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(102, 126, 234, 0.10),
+    0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.password-input:focus-visible {
+  outline: none; 
+}
+
+.password-input:disabled {
+  background: #f7fafc;
+  border-color: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.password-input::placeholder {
+  color: #a0aec0;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.password-input.error {
+  border-color: #e53e3e;
+  background: #fff5f5;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.08);
+}
+
+.password-input.success {
+  border-color: #38a169;
+  background: #f0fff4;
+  box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.06);
+}
+
+.password-input.small { padding: 10px 42px 10px 12px; font-size: 0.9rem; border-radius: 10px; }
+.password-input.large { padding: 16px 52px 16px 20px; font-size: 1.1rem; border-radius: 14px; }
+
+
+.toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%); /* stable vertical centering */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: #a0aec0;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 160ms cubic-bezier(0.4,0,0.2,1), background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+/* Hover & active (icon only) */
+.toggle-eye:hover {
+  transform: translateY(-50%) scale(1.05);
+  color: #667eea;
+  background: #f7fafc;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.12);
+}
+
+.toggle-eye:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+/* Focus for keyboard users */
+.toggle-eye:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.10);
+  border-radius: 8px;
+}
+
+/* Disabled eye */
+.toggle-eye:disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Optional subtle reveal animation class */
+@keyframes eyeReveal {
+  0%   { transform: translateY(-50%) scale(1); }
+  50%  { transform: translateY(-50%) scale(1.12); }
+  100% { transform: translateY(-50%) scale(1); }
+}
+.toggle-eye.revealing { animation: eyeReveal 280ms ease; }
+
+/* =========================
+   Dark mode (consistent)
+   - we keep the input light by default; but if you want dark inputs,
+     you can remove the color-scheme: light above and style below.
+   ========================= */
+@media (prefers-color-scheme: dark) {
+  /* If you WANT dark-style inputs, uncomment these and remove color-scheme: light above */
+  /*
+  .password-input {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  .password-input:focus {
+    background: #1a202c;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.08);
+  }
+  .password-input::placeholder { color: #718096; }
+  */
+
+  /* Ensure eye icon also matches dark theme if you do enable dark inputs */
+  .toggle-eye {
+    color: #a0aec0;
+  }
+  .toggle-eye:hover {
+    background: #2d3748;
+    color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+
+  .password-input:disabled {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #718096;
+  }
+}
+
+/* =========================
+   Responsive adjustments
+   ========================= */
+@media (max-width: 768px) {
+  .password-input {
+    padding: 12px 44px 12px 14px;
+  }
+  .toggle-eye { width: 30px; height: 30px; font-size: 1rem; padding: 5px; right: 10px; }
+}
+
+/* =========================
+   High contrast / print tweaks
+   ========================= */
+@media (prefers-contrast: high) {
+  .password-input { border-width: 2px; }
+  .toggle-eye { border: 1px solid currentColor; }
+}
+
+/* Print */
+@media print {
+  .password-input { background: transparent; border: 1px solid #000; color: #000; }
+  .toggle-eye { display: none; }
+}
