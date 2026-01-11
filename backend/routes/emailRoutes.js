@@ -1,21 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, 
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 router.post("/send", async (req, res) => {
   try {
     const { type, area } = req.body;
 
     if (!type || !area) {
-      return res.status(400).json({ success: false, message: "Missing fields" });
+      return res.status(400).json({
+        success: false,
+        message: "Missing fields"
+      });
     }
 
     let subject = "";
@@ -57,18 +54,25 @@ router.post("/send", async (req, res) => {
         .json({ success: false, message: "Invalid email type" });
     }
 
-    await transporter.sendMail({
-      from: `"Smart Power System" <${process.env.EMAIL_USER}>`,
-      to: process.env.ALERT_RECEIVER || process.env.EMAIL_USER,
-      subject,
+     await resend.emails.send({
+      from: "Smart Power System <onboarding@resend.dev>",
+      to: [process.env.ALERT_RECEIVER],
+      subject: subject,
       html: htmlMessage,
     });
 
     console.log(`📨 Email sent successfully for ${type.toUpperCase()} in ${area}`);
-    res.json({ success: true, message: "Email sent successfully" });
+    res.json({
+      success: true,
+      message: "Email sent successfully"
+    });
+
   } catch (error) {
     console.error("❌ Email sending failed:", error);
-    res.status(500).json({ success: false, message: "Email sending failed" });
+    res.status(500).json({
+      success: false,
+      message: error.message || "Email sending failed"
+    });
   }
 });
 
