@@ -77,7 +77,6 @@ const processRealMeterData = async (meterId, espNowData) => {
     return null;
   }
 };
-
 async function logUsage(type) {
   try {
     const meters = await Meter.find();
@@ -111,12 +110,19 @@ async function logUsage(type) {
     });
     
     if (existing) {
-      existing.streetInput = streetInput;
-      existing.toNext = toNext;
-      existing.houseTotal = houseTotal;
-      existing.powerLoss = powerLoss;
-      existing.theftAlert = theftAlert;
-      await existing.save();
+      // ✅ FIX THIS SECTION ONLY:
+      // Use findOneAndUpdate instead of manual save to trigger middleware
+      await UsageLog.findOneAndUpdate(
+        { _id: existing._id },
+        {
+          streetInput,
+          toNext,
+          houseTotal,
+          powerLoss,
+          theftAlert
+        },
+        { new: true, runValidators: true }
+      );
       
       console.log(`📝 Updated ${type} log: Loss=${powerLoss.toFixed(2)}W (${lossPercentage.toFixed(1)}%)`);
     } else {
@@ -137,7 +143,6 @@ async function logUsage(type) {
     console.error(`❌ Error saving ${type} log:`, err.message);
   }
 }
-
 function startLoggingIntervals() {
   if (loggingStarted) {
     console.log("⚙️ Logging already running");

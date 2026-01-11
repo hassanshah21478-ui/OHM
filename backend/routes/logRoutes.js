@@ -7,7 +7,7 @@ router.get("/daily", async (_req, res) => {
     const logs = await UsageLog.find({ logType: "daily" })
       .sort({ date: -1 })
       .limit(7)
-      .lean();
+      .lean({ virtuals: true });
     
     res.json(logs.reverse());
   } catch (err) {
@@ -20,7 +20,7 @@ router.get("/daily/all", async (_req, res) => {
   try {
     const logs = await UsageLog.find({ logType: "daily" })
       .sort({ date: -1 })
-      .lean();
+      .lean({ virtuals: true });
     
     res.json(logs);
   } catch (err) {
@@ -34,7 +34,7 @@ router.get("/monthly", async (_req, res) => {
     const logs = await UsageLog.find({ logType: "monthly" })
       .sort({ date: -1 })
       .limit(6)
-      .lean();
+      .lean({ virtuals: true });
     
     res.json(logs.reverse());
   } catch (err) {
@@ -47,7 +47,7 @@ router.get("/monthly/all", async (_req, res) => {
   try {
     const logs = await UsageLog.find({ logType: "monthly" })
       .sort({ date: -1 })
-      .lean();
+      .lean({ virtuals: true });
     
     res.json(logs);
   } catch (err) {

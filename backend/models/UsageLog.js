@@ -59,18 +59,9 @@ const usageLogSchema = new mongoose.Schema({
     }
   },
 
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
 
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
 }, {
-
-  timestamps: true
+  timestamps: true 
 });
 
 usageLogSchema.pre('save', function(next) {
