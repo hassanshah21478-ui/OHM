@@ -28,7 +28,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "",
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -331,8 +331,6 @@ app.get("/api/system/status", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch system status" });
   }
 });
-
-
 const PORT = process.env.PORT || 5000;
 const os = require('os');
 
@@ -355,21 +353,24 @@ app.listen(PORT, HOST, () => {
   console.log('='.repeat(60));
   console.log('🚀 SERVER STARTED SUCCESSFULLY');
   console.log('='.repeat(60));
-  
-  // Get the correct server URL
-  let serverURL = process.env.SERVER_URL || "ohm-4su2.onrender.com";
-
-  serverURL = serverURL.replace(/^https?:\/\//, '');
-  
-  console.log(`🌐 Local Network: http://${serverIP}:${PORT}`);
-  console.log(`📦 Backend URL: https://${serverURL}`);
+  console.log(`🌐 Local Network Access:`);
+  console.log(`   🔗 http://localhost:${PORT}`);
+  console.log(`   🔗 http://${serverIP}:${PORT}`);
+  console.log('');
+  console.log(`📦 Backend URL: https://${process.env.SERVER_URL || "ohm-4su2.onrender.com"}`);
   console.log('');
   console.log('📡 ESP32 CONFIGURATION:');
-  console.log(`   📤 Send Data To: https://${serverURL}/api/espnow/data`);
-  console.log(`   📊 Check Status: https://${serverURL}/api/espnow/status`);
+  console.log(`   📤 Send Data To: ${process.env.SERVER_URL || "https://ohm-4su2.onrender.com"}/api/espnow/data`);
+  console.log(`   📊 Check Status: ${process.env.SERVER_URL || "https://ohm-4su2.onrender.com"}/api/espnow/status`);
   console.log('');
   console.log('🖥️ FRONTEND:');
-  console.log(`   👉 Frontend URL: https://ohm-xi.vercel.app`);
+  console.log(`   👉 Frontend URL: https://ohm-xi.vercel.app/`);
+  console.log(`   📱 Dashboard: https://ohm-xi.vercel.app/login`);
+  console.log('');
+  console.log('🔧 API ENDPOINTS:');
+  console.log(`   📊 System Status: http://localhost:${PORT}/api/system/status`);
+  console.log(`   ❤️ Health Check: http://localhost:${PORT}/api/system/health`);
+  console.log(`   📈 Meters Data: http://localhost:${PORT}/api/meters`);
   console.log('='.repeat(60));
   console.log(`⏰ Server Time: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
