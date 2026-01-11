@@ -25,6 +25,11 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Add debug log
+  useEffect(() => {
+    console.log("📱 Header - Admin profilePic:", admin?.profilePic);
+  }, [admin]);
+
   return (
     <header className="header compact-header dark-header">
       <div className="header-left">
@@ -33,6 +38,7 @@ const Header = () => {
           alt="Logo"
           className="header-logo"
           onClick={() => navigate("/dashboard")}
+          onError={(e) => e.target.src = "/logo.png"}
         />
       </div>
 
@@ -43,9 +49,13 @@ const Header = () => {
           aria-label="Profile Menu"
         >
           <img
-            src={admin?.profilePic || "/default-avatar.png"}
-            alt="Admin Avatar"
+            src={admin?.profilePic || "/proLogo.png"}  // Use admin's or fallback
+            alt="OHM Logo"
             className="header-avatar"
+            onError={(e) => {
+              console.log("❌ Image error, falling back to proLogo");
+              e.target.src = "/proLogo.png"; // Force proLogo on error
+            }}
           />
           <span className="header-name">{admin?.name || "Admin"}</span>
         </button>

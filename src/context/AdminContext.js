@@ -21,7 +21,13 @@ export const AdminProvider = ({ children }) => {
       const data = await res.json();
 
       if (data.success && data.admin) {
-        setAdmin(data.admin);
+        const adminData = {
+          ...data.admin,
+          profilePic: "/proLogo.png"  
+        };
+        
+        console.log("✅ Admin data loaded:", adminData);
+        setAdmin(adminData);
       } else {
         setAdmin(null);
       }
@@ -37,8 +43,22 @@ export const AdminProvider = ({ children }) => {
     fetchAdmin();
   }, []);
 
+ 
+  const updateAdmin = (newAdminData) => {
+    setAdmin(prev => ({
+      ...prev,
+      ...newAdminData,
+      profilePic: "/proLogo.png"  
+    }));
+  };
+
   return (
-    <AdminContext.Provider value={{ admin, setAdmin, fetchAdmin, loading }}>
+    <AdminContext.Provider value={{ 
+      admin, 
+      setAdmin: updateAdmin,  
+      fetchAdmin, 
+      loading 
+    }}>
       {children}
     </AdminContext.Provider>
   );
