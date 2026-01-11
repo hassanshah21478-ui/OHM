@@ -4,6 +4,8 @@ const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const PRO_LOGO_URL = "https://ohm-xi.vercel.app/proLogo.png";
+
 let codeStorage = {};
 
 exports.sendVerificationCode = async (req, res) => {
@@ -23,10 +25,23 @@ exports.sendVerificationCode = async (req, res) => {
 
     codeStorage[email] = { code, expiresAt };
 
+    // SIMPLE HTML with your logo
+    const htmlContent = `
+    <div style="text-align: center; padding: 20px 0;">
+      <img src="${PRO_LOGO_URL}" alt="Logo" style="max-height: 50px;">
+    </div>
+    <p>Dear Admin,</p>
+    <p>You have requested to reset your password for the IoT Smart Power Monitoring system.</p>
+    <p><strong>Verification Code: ${code}</strong></p>
+    <p>This code is valid for 59 seconds.</p>
+    <p>Regards,<br>IoT Power Monitoring System Team</p>
+    `;
+
     await resend.emails.send({
       from: "IoT Power Monitoring <onboarding@resend.dev>",
       to: [email],
       subject: "🔐 Password Reset Verification – IoT Power Monitoring",
+      html: htmlContent,
       text: `Dear Admin,
 
 You have requested to reset your password for the IoT Smart Power Monitoring system.
@@ -34,7 +49,7 @@ Please use the verification code below to proceed:
 
 🔢 Verification Code: ${code}
 
-This code is valid for 59 seconds. If you didn’t request this, please ignore this email.
+This code is valid for 59 seconds. If you didn't request this, please ignore this email.
 
 Regards,
 IoT Power Monitoring System Team`
