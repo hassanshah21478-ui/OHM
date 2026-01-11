@@ -21,19 +21,35 @@ app.use(
   helmet({
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    }
   })
 );
 
 app.use(express.json());
 
+// Fix CORS - allow both frontend and localhost for development
 app.use(
   cors({
-    origin: "*",
+    origin: [
+      "https://ohm-xi.vercel.app",
+      "http://localhost:3000",
+      process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://ohm-xi.vercel.app"
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
+
+// Handle preflight requests
+app.options("*", cors());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -68,7 +84,8 @@ let espNowData = {
   gateway: {
     cycleNumber: 0,
     lastUpdate: 0,
-    wifiConnected: false
+    wifiConnected: false,
+    lastDataReceived: 0
   }
 };
 
@@ -105,16 +122,16 @@ async function updateMeterInDatabase(meterId, meterData) {
     const current = meterData.current || 0;
     const apparentPower = meterData.apparentPower || 0;
     
-  
-    const powerFactor = 1.0;
+    // Calculate real power (P = V × I × PF)
+    const powerFactor = 0.95; // Typical power factor for homes
     const realPower = voltage * current * powerFactor;
     
-  
-    meter.voltage = voltage;
-    meter.current = current;
-    meter.watts = realPower;
-    meter.power = realPower; 
-    meter.units = apparentPower; 
+    // Update meter data
+    meter.voltage = Number(voltage.toFixed(2));
+    meter.current = Number(current.toFixed(3));
+    meter.watts = Number(realPower.toFixed(2));
+    meter.power = Number(realPower.toFixed(2)); 
+    meter.units = Number((apparentPower || 0).toFixed(2)); 
     meter.status = meterData.online ? "Online" : "Offline";
     meter.lastUpdated = new Date();
 
@@ -124,7 +141,7 @@ async function updateMeterInDatabase(meterId, meterData) {
     
     await meter.save();
     
-    console.log(`✅ Updated ${meterId}: ${voltage}V, ${current}A, ${realPower.toFixed(2)}W, ${apparentPower} units`);
+    console.log(`✅ Updated ${meterId}: ${voltage}V, ${current}A, ${realPower.toFixed(2)}W`);
     
     return meter;
   } catch (err) {
@@ -133,16 +150,23 @@ async function updateMeterInDatabase(meterId, meterData) {
   }
 }
 
+// ESP-NOW Data Endpoint
 app.post("/api/espnow/data", express.json({ limit: '1mb' }), async (req, res) => {
   try {
     const data = req.body;
+    const now = Date.now();
+    
+    console.log(`📡 ESP-NOW Data Received at ${new Date(now).toISOString()}`);
     
     if (!data || !data.meters) {
-      return res.status(400).json({ message: "Invalid data format" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid data format. Expected {meters: []}" 
+      });
     }
 
-    const now = Date.now();
-
+    let processedCount = 0;
+    
     for (const meterData of data.meters) {
       const existingMeter = espNowData.meters.find(m => m.meterId === meterData.meterId);
       if (existingMeter) {
@@ -166,38 +190,91 @@ app.post("/api/espnow/data", express.json({ limit: '1mb' }), async (req, res) =>
           consumer: meterData.consumer,
           online: meterData.online
         });
+        
+        processedCount++;
+      } else {
+        console.log(`⚠️ Unknown meter ID: ${meterData.meterId}`);
       }
     }
 
     espNowData.gateway = {
       cycleNumber: data.cycleNumber || 0,
       lastUpdate: now,
+      lastDataReceived: now,
       wifiConnected: data.wifiConnected || false,
       timestamp: now
     };
 
     const onlineCount = data.meters.filter(m => m.online).length;
-    console.log(`📡 ESP-NOW Data Received: ${onlineCount}/4 meters online`);
+    console.log(`📊 Processed ${processedCount} meters. Online: ${onlineCount}/4`);
     
-    res.json({ success: true, message: "Data received", onlineMeters: onlineCount });
+    res.json({ 
+      success: true, 
+      message: "Data received successfully", 
+      onlineMeters: onlineCount,
+      timestamp: now 
+    });
   } catch (err) {
     console.error("❌ Error processing ESP-NOW data:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: err.message 
+    });
   }
 });
 
+// ESP-NOW Status Endpoint
 app.get("/api/espnow/status", (req, res) => {
   const now = Date.now();
-  const OFFLINE_TIMEOUT = 30000;
+  const OFFLINE_TIMEOUT = 30000; // 30 seconds
   
+  // Update online status based on last seen
   espNowData.meters.forEach(meter => {
-    if (meter.data && now - meter.lastSeen > OFFLINE_TIMEOUT) {
+    if (meter.lastSeen > 0 && now - meter.lastSeen > OFFLINE_TIMEOUT) {
+      if (meter.online) {
+        console.log(`⚠️ ${meter.meterId} marked OFFLINE (no data for ${Math.floor((now - meter.lastSeen)/1000)}s)`);
+      }
       meter.online = false;
-      meter.data = null;
     }
   });
   
-  res.json(espNowData);
+  // Calculate gateway uptime
+  const gatewayUptime = espNowData.gateway.lastDataReceived > 0 
+    ? Math.floor((now - espNowData.gateway.lastDataReceived) / 1000)
+    : 0;
+  
+  res.json({
+    ...espNowData,
+    gateway: {
+      ...espNowData.gateway,
+      uptimeSeconds: gatewayUptime,
+      status: gatewayUptime < 60 ? "Active" : "Inactive"
+    },
+    timestamp: now
+  });
+});
+
+// ESP-NOW Debug Endpoint (for testing)
+app.get("/api/espnow/debug", (req, res) => {
+  const now = Date.now();
+  const debugData = {
+    gateway: espNowData.gateway,
+    meters: espNowData.meters.map(meter => ({
+      meterId: meter.meterId,
+      online: meter.online,
+      lastSeenSeconds: meter.lastSeen > 0 ? Math.floor((now - meter.lastSeen) / 1000) : -1,
+      packetCount: meter.packetCount || 0,
+      data: meter.data || null
+    })),
+    environment: {
+      nodeEnv: process.env.NODE_ENV || 'development',
+      serverUrl: process.env.SERVER_URL || 'not-set',
+      backendUrl: process.env.REACT_APP_API_URL || 'not-set'
+    }
+  };
+  
+  res.json(debugData);
 });
 
 async function createDefaultAdmin() {
@@ -212,20 +289,36 @@ async function createDefaultAdmin() {
         email: "hassanshah21478@gmail.com",
         designation: "Student",
         area: "DHA PHASE 1",
-        profilePic: "/public/proLogo.png",
+        profilePic: "/uploads/default-avatar.png", // FIXED PATH
         password: hashed,
       });
       console.log("✅ Default admin created: hassanshah21478@gmail.com / hassan14539");
     } else {
+      // Update existing admin with correct profile path
+      if (existing.profilePic === "/public/proLogo.png") {
+        existing.profilePic = "/uploads/default-avatar.png";
+        await existing.save();
+        console.log("✅ Updated existing admin profile picture path");
+      }
       console.log("ℹ️ Default admin already exists");
     }
   } catch (err) {
-    console.error("❌ Error creating default admin:", err.message);
+    console.error("❌ Error creating/updating default admin:", err.message);
   }
 }
-createDefaultAdmin();
 
+createDefaultAdmin();
 startRealDataProcessing();
+
+// Test endpoint
+app.get("/api/test", (req, res) => {
+  res.json({ 
+    message: "Backend is running", 
+    timestamp: new Date().toISOString(),
+    server: "https://ohm-4su2.onrender.com",
+    frontend: "https://ohm-xi.vercel.app"
+  });
+});
 
 app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({ message: "You have access", user: req.user });
@@ -233,7 +326,6 @@ app.get("/api/protected", authMiddleware, (req, res) => {
 
 app.get("/api/system/health", async (req, res) => {
   try {
-
     const meters = await Meter.find();
     
     const totalMeters = meters.length;
@@ -252,11 +344,15 @@ app.get("/api/system/health", async (req, res) => {
       network: networkStatus,
       accuracy: Number(dataAccuracy),
       activeMeters,
+      totalMeters: 4, // We always have 4 meters
       lastSync: lastUpdated,
       gateway: {
         cycleNumber: espNowData.gateway.cycleNumber,
         wifiConnected: espNowData.gateway.wifiConnected,
-        lastUpdate: new Date(espNowData.gateway.lastUpdate).toISOString()
+        lastUpdate: new Date(espNowData.gateway.lastUpdate).toISOString(),
+        uptime: espNowData.gateway.lastDataReceived > 0 
+          ? Math.floor((Date.now() - espNowData.gateway.lastDataReceived) / 1000)
+          : 0
       }
     });
   } catch (err) {
@@ -265,10 +361,8 @@ app.get("/api/system/health", async (req, res) => {
   }
 });
 
-
 app.get("/api/system/status", async (req, res) => {
   try {
-
     const meters = await Meter.find();
 
     const streetInput = meters.find(m => m.meterId === "A-001");
@@ -316,13 +410,18 @@ app.get("/api/system/status", async (req, res) => {
       houseTotalPower: Number(houseTotalPower.toFixed(2)),
       toNextPower: Number(toNextPower.toFixed(2)),
       powerLoss: Number(powerLoss.toFixed(2)),
+      lossPercentage: Number(lossPercent.toFixed(1)),
       theftStatus,
       meterStatus,
       gatewayStatus: {
         cycleNumber: espNowData.gateway.cycleNumber,
         lastUpdate: espNowData.gateway.lastUpdate,
+        lastDataReceived: espNowData.gateway.lastDataReceived,
         wifiConnected: espNowData.gateway.wifiConnected,
-        onlineMeters: onlineFromESPNow
+        onlineMeters: onlineFromESPNow,
+        uptimeSeconds: espNowData.gateway.lastDataReceived > 0 
+          ? Math.floor((now - espNowData.gateway.lastDataReceived) / 1000)
+          : 0
       },
       timestamp: new Date(),
     });
@@ -331,7 +430,6 @@ app.get("/api/system/status", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch system status" });
   }
 });
-
 
 const PORT = process.env.PORT || 5000;
 const os = require('os');
@@ -355,16 +453,26 @@ app.listen(PORT, HOST, () => {
   console.log('='.repeat(60));
   console.log('🚀 SERVER STARTED SUCCESSFULLY');
   console.log('='.repeat(60));
+  
+  // Clean server URL
+  let serverURL = process.env.SERVER_URL || "ohm-4su2.onrender.com";
+  serverURL = serverURL.replace(/^https?:\/\//, '');
+  
   console.log(`🌐 Local Network: http://${serverIP}:${PORT}`);
-  console.log(`📦 Backend URL: https://${process.env.SERVER_URL || "ohm-4su2.onrender.com"}`);
+  console.log(`📦 Backend URL: https://${serverURL}`);
+  console.log(`📡 Frontend URL: https://ohm-xi.vercel.app`);
   console.log('');
   console.log('📡 ESP32 CONFIGURATION:');
-  console.log(`   📤 Send Data To: ${process.env.SERVER_URL ? `https://${process.env.SERVER_URL}` : `http://${serverIP}:${PORT}`}/api/espnow/data`);
-  console.log(`   📊 Check Status: ${process.env.SERVER_URL ? `https://${process.env.SERVER_URL}` : `http://${serverIP}:${PORT}`}/api/espnow/status`);
+  console.log(`   📤 Send Data To: https://${serverURL}/api/espnow/data`);
+  console.log(`   📊 Check Status: https://${serverURL}/api/espnow/status`);
+  console.log(`   🐛 Debug Info: https://${serverURL}/api/espnow/debug`);
   console.log('');
-  console.log('🖥️ FRONTEND:');
-  console.log(`   👉 Frontend URL: https://ohm-xi.vercel.app`);
+  console.log('✅ ENDPOINTS:');
+  console.log(`   👉 System Health: https://${serverURL}/api/system/health`);
+  console.log(`   👉 System Status: https://${serverURL}/api/system/status`);
+  console.log(`   👉 Test Endpoint: https://${serverURL}/api/test`);
   console.log('='.repeat(60));
   console.log(`⏰ Server Time: ${new Date().toLocaleString()}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log('='.repeat(60));
 });

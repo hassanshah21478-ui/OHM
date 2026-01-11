@@ -3,6 +3,19 @@ const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcrypt");
 
+const buildImageUrl = (imagePath) => {
+  if (!imagePath) return "";
+  
+  if (imagePath.startsWith("http")) {
+    return imagePath;
+  }
+  
+  const baseUrl = process.env.REACT_APP_API_URL || "https://ohm-4su2.onrender.com";
+  
+  const normalizedPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+  
+  return `${baseUrl}${normalizedPath}`;
+};
 
 exports.getAdmin = async (req, res) => {
   try {
@@ -16,9 +29,7 @@ exports.getAdmin = async (req, res) => {
       message: "Admin data fetched successfully",
       admin: {
         ...admin.toObject(),
-        profilePic: admin.profilePic
-          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${admin.profilePic}`
-          : "", 
+        profilePic: buildImageUrl(admin.profilePic),
       },
     });
   } catch (err) {
@@ -26,7 +37,6 @@ exports.getAdmin = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.verifyPassword = async (req, res) => {
   const { password } = req.body;
@@ -63,7 +73,6 @@ exports.updateAdmin = async (req, res) => {
     if (designation) updateFields.designation = designation;
     if (area) updateFields.area = area;
 
-    
     if (email && email !== admin.email) {
       const existing = await Admin.findOne({ email });
       if (existing) {
@@ -72,11 +81,9 @@ exports.updateAdmin = async (req, res) => {
       updateFields.email = email;
     }
 
-    
     if (req.file) {
       const newPath = `/uploads/${req.file.filename}`;
 
-    
       if (admin.profilePic && admin.profilePic.startsWith("/uploads/")) {
         const oldPath = path.resolve(__dirname, "..", admin.profilePic);
         fs.unlink(oldPath, (err) => {
@@ -89,7 +96,6 @@ exports.updateAdmin = async (req, res) => {
       updateFields.profilePic = newPath;
     }
 
-    
     const updatedAdmin = await Admin.findByIdAndUpdate(
       admin._id,
       { $set: updateFields },
@@ -101,9 +107,7 @@ exports.updateAdmin = async (req, res) => {
       message: "Admin updated successfully",
       admin: {
         ...updatedAdmin.toObject(),
-        profilePic: updatedAdmin.profilePic
-          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${updatedAdmin.profilePic}`
-          : "",
+        profilePic: buildImageUrl(updatedAdmin.profilePic),
       },
     });
   } catch (err) {
@@ -111,7 +115,6 @@ exports.updateAdmin = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
@@ -124,6 +127,13 @@ exports.changePassword = async (req, res) => {
     const isMatch = await bcrypt.compare(oldPassword, admin.password);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Wrong password" });
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password must be at least 6 characters long" 
+      });
     }
 
     admin.password = await bcrypt.hash(newPassword, 10);
