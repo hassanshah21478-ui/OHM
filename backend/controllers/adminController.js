@@ -1,12 +1,10 @@
 const Admin = require("../models/Admin");
-const fs = require("fs");
-const path = require("path");
 const bcrypt = require("bcrypt");
 
-
+// Get admin info
 exports.getAdmin = async (req, res) => {
   try {
-    const admin = await Admin.findOne().select("-password"); // exclude password
+    const admin = await Admin.findOne().select("-password");
     if (!admin) {
       return res.status(404).json({ success: false, message: "Admin not found" });
     }
@@ -16,9 +14,7 @@ exports.getAdmin = async (req, res) => {
       message: "Admin data fetched successfully",
       admin: {
         ...admin.toObject(),
-        profilePic: admin.profilePic
-          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${admin.profilePic}`
-          : "", 
+        profilePic: "/proLogo.png", // ALWAYS return fixed logo
       },
     });
   } catch (err) {
@@ -27,7 +23,7 @@ exports.getAdmin = async (req, res) => {
   }
 };
 
-
+// Verify password
 exports.verifyPassword = async (req, res) => {
   const { password } = req.body;
   try {
@@ -48,8 +44,11 @@ exports.verifyPassword = async (req, res) => {
   }
 };
 
+// Update admin info
 exports.updateAdmin = async (req, res) => {
   try {
+    console.log("📝 Update request received:", req.body); // Debug log
+    
     const admin = await Admin.findOne();
     if (!admin) {
       return res.status(404).json({ success: false, message: "Admin not found" });
@@ -58,61 +57,69 @@ exports.updateAdmin = async (req, res) => {
     const updateFields = {};
     const { name, uId, email, designation, area } = req.body;
 
-    if (name) updateFields.name = name;
-    if (uId) updateFields.uId = uId;
-    if (designation) updateFields.designation = designation;
-    if (area) updateFields.area = area;
+    // Validate and add fields
+    if (name && name.trim()) updateFields.name = name.trim();
+    if (uId && uId.trim()) updateFields.uId = uId.trim();
+    if (designation && designation.trim()) updateFields.designation = designation.trim();
+    if (area && area.trim()) updateFields.area = area.trim();
 
-    
-    if (email && email !== admin.email) {
-      const existing = await Admin.findOne({ email });
-      if (existing) {
-        return res.status(400).json({ success: false, message: "Email already in use" });
+    // Handle email separately (check for duplicates)
+    if (email && email.trim()) {
+      if (email !== admin.email) {
+        const existing = await Admin.findOne({ email: email.trim() });
+        if (existing) {
+          return res.status(400).json({ 
+            success: false, 
+            message: "Email already in use" 
+          });
+        }
+        updateFields.email = email.trim();
       }
-      updateFields.email = email;
     }
 
+    // NO profilePic handling - we're using fixed logo
+    // Remove any file upload logic
     
-    if (req.file) {
-      const newPath = `/uploads/${req.file.filename}`;
-
-    
-      if (admin.profilePic && admin.profilePic.startsWith("/uploads/")) {
-        const oldPath = path.resolve(__dirname, "..", admin.profilePic);
-        fs.unlink(oldPath, (err) => {
-          if (err && err.code !== "ENOENT") {
-            console.error("⚠️ Failed to delete old profilePic:", err.message);
-          }
-        });
-      }
-
-      updateFields.profilePic = newPath;
-    }
-
-    
+    // Update the admin
     const updatedAdmin = await Admin.findByIdAndUpdate(
       admin._id,
       { $set: updateFields },
-      { new: true }
+      { new: true, runValidators: true }
     ).select("-password");
+
+    // ALWAYS return proLogo.png as profilePic
+    const adminResponse = {
+      name: updatedAdmin.name,
+      uId: updatedAdmin.uId,
+      email: updatedAdmin.email,
+      designation: updatedAdmin.designation,
+      area: updatedAdmin.area,
+      profilePic: "/proLogo.png", // Fixed logo always
+    };
 
     res.json({
       success: true,
       message: "Admin updated successfully",
-      admin: {
-        ...updatedAdmin.toObject(),
-        profilePic: updatedAdmin.profilePic
-          ? `${process.env.SERVER_URL || `${process.env.REACT_APP_API_URL}`}${updatedAdmin.profilePic}`
-          : "",
-      },
+      admin: adminResponse,
     });
   } catch (err) {
-    console.error("Error updating admin:", err.message);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error updating admin:", err.message);
+    
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Validation error: " + err.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error while updating" 
+    });
   }
 };
 
-
+// Change password
 exports.changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   try {

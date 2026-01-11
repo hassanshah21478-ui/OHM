@@ -19,34 +19,61 @@ const ConfirmPasswordModal = ({ onClose, onSuccess, formData }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const fd = new FormData();
+      
+      // ✅ FIRST verify password
+      const verifyRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/admin/verify-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ password }),
+        }
+      );
 
-      // ✅ Append all form fields safely
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) fd.append(key, value);
-      });
+      const verifyData = await verifyRes.json();
 
-      fd.append("password", password);
-
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        setError("Wrong password or update failed.");
+      if (!verifyData.success) {
+        setError("Wrong password");
         setLoading(false);
         return;
       }
 
+      // ✅ THEN update admin (send as JSON, not FormData)
+      const updateRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/admin`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            uId: formData.uId,
+            email: formData.email,
+            designation: formData.designation,
+            area: formData.area,
+            // NO profilePic field
+          }),
+        }
+      );
+
+      const data = await updateRes.json();
+
+      if (!data.success) {
+        setError(data.message || "Update failed");
+        setLoading(false);
+        return;
+      }
+
+      // Success!
       onSuccess(data.admin);
     } catch (err) {
       console.error("Error updating admin:", err);
       setError("Server error. Please try again later.");
-    } finally {
       setLoading(false);
     }
   };
@@ -80,7 +107,6 @@ const ConfirmPasswordModal = ({ onClose, onSuccess, formData }) => {
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </span>
         </div>
-
 
         {/* ⚠️ Error Message */}
         {error && <p className="error-text">{error}</p>}
