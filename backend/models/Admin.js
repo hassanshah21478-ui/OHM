@@ -6,7 +6,7 @@ const adminSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, default: "hassanshah21478@gmail.com" },
   designation: { type: String, default: "Student" },
   area: { type: String, default: "DHA PHASE 1" },
-  profilePic: { type: String, default: "/uploads/default-avatar.png" },
+  profilePic: { type: String, default: "/public/proLogo.png" }, 
   password: { type: String, required: true },
 });
 

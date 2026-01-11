@@ -2,12 +2,16 @@ import React from "react";
 import { UserCog } from "lucide-react";
 import "../styles/AdminInfoCard.css";
 
+const FRONTEND_URL = "https://ohm-xi.vercel.app";
+
 const AdminInfoCard = ({ admin }) => {
   if (!admin) return null;
 
-  const profileImage = admin.profilePic 
-    ? admin.profilePic 
-    : `${process.env.REACT_APP_API_URL || "https://ohm-4su2.onrender.com"}/uploads/default-avatar.png`;
+  const profileImage = admin.profilePic
+    ? admin.profilePic.startsWith("http")
+      ? admin.profilePic
+      : `${FRONTEND_URL}${admin.profilePic.replace("/public", "")}`
+    : "/default-avatar.png";
 
   return (
     <div className="admin-info-card">
@@ -28,9 +32,7 @@ const AdminInfoCard = ({ admin }) => {
             alt="Profile"
             className="admin-profile-pic"
             onError={(e) => {
-              // Fallback if image fails to load
-              e.target.src = `${process.env.REACT_APP_API_URL || "https://ohm-4su2.onrender.com"}/uploads/default-avatar.png`;
-              console.log("Image failed to load, using fallback");
+              e.target.src = "/default-avatar.png";
             }}
           />
         </div>
