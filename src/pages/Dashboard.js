@@ -46,29 +46,20 @@ const Dashboard = () => {
           prevUnits.current[id] = (prevUnits.current[id] || 0) + addedUnits;
           return Math.round(prevUnits.current[id]);
         };
-
+        
+        const streetInput = get("A-001"); 
         const house2 = get("A-003");
         const house3 = get("A-004");
         const toNext = get("A-005");
 
-        const streetInputRaw = get("A-001");
-        const streetInput = {
-          ...streetInputRaw,
-          current:
-            (house2.current || 0) +
-            (house3.current || 0) +
-            (toNext.current || 0),
-          power:
-            (house2.power || 0) +
-            (house3.power || 0) +
-            (toNext.power || 0),
-        };
-
         const updatedMeters = {
-          streetInput: { ...streetInput, units: calcUnits("A-001", streetInput.power) },
-          house2: { ...house2, units: calcUnits("A-003", house2.power) },
-          house3: { ...house3, units: calcUnits("A-004", house3.power) },
-          toNext: { ...toNext, units: calcUnits("A-005", toNext.power) },
+          streetInput: { 
+            ...streetInput, 
+            units: calcUnits("A-001", streetInput.power || 0) 
+          },
+          house2: { ...house2, units: calcUnits("A-003", house2.power || 0) },
+          house3: { ...house3, units: calcUnits("A-004", house3.power || 0) },
+          toNext: { ...toNext, units: calcUnits("A-005", toNext.power || 0) },
         };
 
         setMeters(updatedMeters);
@@ -87,15 +78,10 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const houseTotal =
-    (meters.house2?.power || 0) +
-    (meters.house3?.power || 0);
-
+  const houseTotal = (meters.house2?.power || 0) + (meters.house3?.power || 0);
   const totalConsumed = (meters.toNext?.power || 0) + houseTotal;
   const powerLoss = Math.abs((meters.streetInput?.power || 0) - totalConsumed);
-  
 
-  // Map meters to MeterRow cards
   const meterCards = [
     meters.streetInput,
     meters.house2,
@@ -106,7 +92,7 @@ const Dashboard = () => {
     id: m.meterId,
     voltage: m.voltage,
     current: m.current,
-    power: m.power,
+    power: m.power, 
     units: m.units,
     status: m.status || "Offline",
   }));

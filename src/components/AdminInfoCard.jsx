@@ -2,16 +2,8 @@ import React from "react";
 import { UserCog } from "lucide-react";
 import "../styles/AdminInfoCard.css";
 
-const FRONTEND_URL = "https://ohm-xi.vercel.app";
-
 const AdminInfoCard = ({ admin }) => {
   if (!admin) return null;
-
-  const profileImage = admin.profilePic
-    ? admin.profilePic.startsWith("http")
-      ? admin.profilePic
-      : `${FRONTEND_URL}${admin.profilePic.replace("/public", "")}`
-    : "/default-avatar.png";
 
   return (
     <div className="admin-info-card">
@@ -25,14 +17,14 @@ const AdminInfoCard = ({ admin }) => {
 
       {/* Body */}
       <div className="admin-body">
-        {/* Profile Picture */}
+        {/* Profile Picture - NOW USING FIXED LOGO */}
         <div className="admin-pic">
           <img
-            src={profileImage}
-            alt="Profile"
+            src="/proLogo.png"  // ← Changed to fixed logo
+            alt="OHM Logo"
             className="admin-profile-pic"
             onError={(e) => {
-              e.target.src = "/default-avatar.png";
+              e.target.src = "/proLogo.png";
             }}
           />
         </div>

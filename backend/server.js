@@ -212,7 +212,7 @@ async function createDefaultAdmin() {
         email: "hassanshah21478@gmail.com",
         designation: "Student",
         area: "DHA PHASE 1",
-        profilePic: "/public/proLogo.png",
+        profilePic: "/proLogo.png",
         password: hashed,
       });
       console.log("✅ Default admin created: hassanshah21478@gmail.com / hassan14539");

@@ -15,10 +15,8 @@ const EditInfo = () => {
     email: admin?.email || "",
     designation: admin?.designation || "",
     area: admin?.area || "",
-    profilePic: null,
   });
 
-  const [preview, setPreview] = useState(admin?.profilePic || "");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -29,16 +27,6 @@ const EditInfo = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setError("");
     setSuccess("");
-  };
-
-  // ✅ Handle image upload + live preview
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, profilePic: file }));
-      setPreview(URL.createObjectURL(file));
-      setError("");
-    }
   };
 
   // ✅ Validate before showing password modal
@@ -130,16 +118,19 @@ const EditInfo = () => {
         />
       </div>
 
+      {/* === Fixed Logo Display === */}
       <div className="form-group">
-        <label>Profile Picture</label>
-        <input
-          type="file"
-          accept=".jpg,.jpeg,.png"
-          onChange={handleFileChange}
-        />
-        {preview && (
-          <img src={preview} alt="Preview" className="preview-img" loading="lazy" />
-        )}
+        <label>Logo</label>
+        <div className="profile-preview-container">
+          <img 
+            src="/proLogo.png" 
+            alt="OHM Logo" 
+            className="preview-img"
+            onError={(e) => {
+              e.target.src = "/proLogo.png";
+            }}
+          />
+        </div>
       </div>
 
       {/* === Feedback === */}
