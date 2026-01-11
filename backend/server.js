@@ -34,7 +34,7 @@ app.use(
 
 app.use(express.json());
 
-// Fix CORS - allow both frontend and localhost for development
+
 app.use(
   cors({
     origin: [
